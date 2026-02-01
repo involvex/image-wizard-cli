@@ -15,13 +15,15 @@ class ImageGenerator:
     :param logging_enabled: Identifies whether logging is enabled or not.
     """
 
-    def __init__(self, auth_cookie_u: str, auth_cookie_srchhpgusr: str, logging_enabled: bool = True):
+    def __init__(
+        self,
+        auth_cookie_u: str,
+        auth_cookie_srchhpgusr: str,
+        logging_enabled: bool = True,
+    ):
         # Setting up httpx client
         self.client: httpx.Client = httpx.Client(
-            cookies={
-                '_U': auth_cookie_u,
-                'SRCHHPGUSR': auth_cookie_srchhpgusr
-            }
+            cookies={"_U": auth_cookie_u, "SRCHHPGUSR": auth_cookie_srchhpgusr}
         )
 
         # Setting up logging
@@ -49,12 +51,9 @@ class ImageGenerator:
             # Sending request to https://bing.com/
             response = self.client.post(
                 url=f"https://www.bing.com/images/create?q={prompt}&rt=3&FORM=GENCRE",
-                data={
-                    'q': prompt,
-                    'qs': 'ds'
-                },
+                data={"q": prompt, "qs": "ds"},
                 follow_redirects=False,
-                timeout=200
+                timeout=200,
             )
 
             # Validating that request succeeded
@@ -70,7 +69,9 @@ class ImageGenerator:
                 raise Exception("🛑 Language is not supported by Bing yet!")
 
             # Get redirect url
-            result_id = response.headers['Location'].replace('&nfy=1', '').split('id=')[-1]
+            result_id = (
+                response.headers["Location"].replace("&nfy=1", "").split("id=")[-1]
+            )
             results_url = f"https://www.bing.com/images/create/async/results/{result_id}?q={prompt}"
 
             # Wait for results
@@ -83,7 +84,9 @@ class ImageGenerator:
                     raise Exception("🛑 Waiting for results timed out!")
 
                 if response.status_code != 200:
-                    raise Exception("🛑 Exception happened while waiting for image generation! (NoResults)")
+                    raise Exception(
+                        "🛑 Exception happened while waiting for image generation! (NoResults)"
+                    )
 
                 if not response.text or response.text.find("errorMessage") != -1:
                     time.sleep(1)
@@ -92,15 +95,22 @@ class ImageGenerator:
                     break
 
             # Find and return image links
-            new_images = ["https://tse" + link.split("?w=")[0] for link in re.findall(
-                'src="https://tse([^"]+)"', response.text)]
+            new_images = [
+                "https://tse" + link.split("?w=")[0]
+                for link in re.findall('src="https://tse([^"]+)"', response.text)
+            ]
             if len(new_images) == 0:
-                raise Exception("🛑 No new images were generated for this cycle, please check your prompt")
+                raise Exception(
+                    "🛑 No new images were generated for this cycle, please check your prompt"
+                )
             images += new_images
-            self.__log(f"✅ Successfully finished cycle {cycle} in {round(time.time() - start_time, 2)} seconds")
+            self.__log(
+                f"✅ Successfully finished cycle {cycle} in {round(time.time() - start_time, 2)} seconds"
+            )
 
         self.__log(
-            f"✅ Finished generating {num_images} images in {round(time.time() - start, 2)} seconds and {cycle} cycles")
+            f"✅ Finished generating {num_images} images in {round(time.time() - start, 2)} seconds and {cycle} cycles"
+        )
         return images[:num_images]
 
     def save(self, images: list, output_dir: str) -> None:
@@ -116,7 +126,9 @@ class ImageGenerator:
         for images in images:
             response = self.client.get(images)
             if response.status_code != 200:
-                raise Exception("🛑 Exception happened while saving image! (Response was not ok)")
+                raise Exception(
+                    "🛑 Exception happened while saving image! (Response was not ok)"
+                )
 
             filename = f"{images.split('/id/')[1]}.jpeg"
             with open(os.path.join(output_dir, filename), "wb") as f:
@@ -134,13 +146,15 @@ class AsyncImageGenerator:
     :param logging_enabled: Identifies whether logging is enabled or not.
     """
 
-    def __init__(self, auth_cookie_u: str, auth_cookie_srchhpgusr: str, logging_enabled: bool = True):
+    def __init__(
+        self,
+        auth_cookie_u: str,
+        auth_cookie_srchhpgusr: str,
+        logging_enabled: bool = True,
+    ):
         # Setting up httpx client
         self.client: httpx.AsyncClient = httpx.AsyncClient(
-            cookies={
-                '_U': auth_cookie_u,
-                'SRCHHPGUSR': auth_cookie_srchhpgusr
-            }
+            cookies={"_U": auth_cookie_u, "SRCHHPGUSR": auth_cookie_srchhpgusr}
         )
 
         # Setting up logging
@@ -168,12 +182,9 @@ class AsyncImageGenerator:
             # Sending request to https://bing.com/
             response = await self.client.post(
                 url=f"https://www.bing.com/images/create?q={prompt}&rt=3&FORM=GENCRE",
-                data={
-                    'q': prompt,
-                    'qs': 'ds'
-                },
+                data={"q": prompt, "qs": "ds"},
                 follow_redirects=False,
-                timeout=200
+                timeout=200,
             )
 
             # Validating that request succeeded
@@ -189,7 +200,9 @@ class AsyncImageGenerator:
                 raise Exception("🛑 Language is not supported by Bing yet!")
 
             # Get redirect url
-            result_id = response.headers['Location'].replace('&nfy=1', '').split('id=')[-1]
+            result_id = (
+                response.headers["Location"].replace("&nfy=1", "").split("id=")[-1]
+            )
             results_url = f"https://www.bing.com/images/create/async/results/{result_id}?q={prompt}"
 
             # Wait for results
@@ -202,7 +215,9 @@ class AsyncImageGenerator:
                     raise Exception("🛑 Waiting for results timed out!")
 
                 if response.status_code != 200:
-                    raise Exception("🛑 Exception happened while waiting for image generation! (NoResults)")
+                    raise Exception(
+                        "🛑 Exception happened while waiting for image generation! (NoResults)"
+                    )
 
                 if not response.text or response.text.find("errorMessage") != -1:
                     time.sleep(1)
@@ -211,14 +226,21 @@ class AsyncImageGenerator:
                     break
 
             # Find and return image links
-            new_images = ["https://tse" + link.split("?w=")[0] for link in re.findall(
-                'src="https://tse([^"]+)"', response.text)]
+            new_images = [
+                "https://tse" + link.split("?w=")[0]
+                for link in re.findall('src="https://tse([^"]+)"', response.text)
+            ]
             if len(new_images) == 0:
-                raise Exception("🛑 No new images were generated for this cycle, please check your prompt")
-            self.__log(f"✅ Successfully finished cycle {cycle} in {round(time.time() - start_time, 2)} seconds")
+                raise Exception(
+                    "🛑 No new images were generated for this cycle, please check your prompt"
+                )
+            self.__log(
+                f"✅ Successfully finished cycle {cycle} in {round(time.time() - start_time, 2)} seconds"
+            )
 
         self.__log(
-            f"✅ Finished generating {num_images} images in {round(time.time() - start, 2)} seconds and {cycle} cycles")
+            f"✅ Finished generating {num_images} images in {round(time.time() - start, 2)} seconds and {cycle} cycles"
+        )
         return images[:num_images]
 
     async def save(self, images: list, output_dir: str) -> None:
@@ -234,7 +256,9 @@ class AsyncImageGenerator:
         for images in images:
             response = await self.client.get(images)
             if response.status_code != 200:
-                raise Exception("🛑 Exception happened while saving image! (Response was not ok)")
+                raise Exception(
+                    "🛑 Exception happened while saving image! (Response was not ok)"
+                )
 
             filename = f"{images.split('/id/')[1]}.jpeg"
             async with aiofiles.open(os.path.join(output_dir, filename), "wb") as f:
@@ -248,32 +272,23 @@ def main():
     parser = argparse.ArgumentParser(
         prog="Bing Create",
         description="A simple lightweight AI Image Generator from text description using Bing Image Creator (DALL-E 3)",
-        epilog="Made by Waenara ^^"
+        epilog="Made by Waenara ^^",
     )
 
     parser.add_argument(
-        "--u",
-        help="Your _U cookie from https://bing.com/",
-        required=True
+        "--u", help="Your _U cookie from https://bing.com/", required=True
     )
 
     parser.add_argument(
-        "--s",
-        help="Your SRCHHPGUSR cookie from https://bing.com/",
-        required=True
+        "--s", help="Your SRCHHPGUSR cookie from https://bing.com/", required=True
     )
 
     parser.add_argument(
-        "--prompt",
-        help="Description of image to generate",
-        required=True
+        "--prompt", help="Description of image to generate", required=True
     )
 
     parser.add_argument(
-        "--number",
-        help="How many images to generate. Default: 4",
-        type=int,
-        default=4
+        "--number", help="How many images to generate. Default: 4", type=int, default=4
     )
 
     parser.add_argument(
@@ -282,9 +297,7 @@ def main():
     )
 
     parser.add_argument(
-        "--quiet",
-        help="If present logging is disabled",
-        action="store_true"
+        "--quiet", help="If present logging is disabled", action="store_true"
     )
 
     args = parser.parse_args()

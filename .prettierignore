@@ -1,0 +1,17 @@
+# Add files here to ignore them from prettier formatting
+/dist
+/coverage
+/.nx/cache
+/.nx/workspace-data
+node_modules
+**/node_modules/**
+/*/**/node_modules/*/**
+.turbo
+/*/*/dist
+build
+vscode-extension/out
+vscode-extension/node_modules
+.venv
+*.py 
+bing_create-egg-info
+output
