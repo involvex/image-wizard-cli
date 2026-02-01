@@ -1,15 +1,23 @@
 import Conf from "conf";
 
-interface ConfigSchema {
+export interface ConfigSchema {
   auth_cookie_u: string;
-  uth_cookie_srchhpgusr: string;
+  auth_cookie_srchhpgusr: string;
+  output_dir?: string;
+  num_images?: number;
+}
+
+export function validateConfig(cfg: ConfigSchema): boolean {
+  return !!(cfg.auth_cookie_u && cfg.auth_cookie_srchhpgusr);
 }
 
 const config = new Conf<ConfigSchema>({
   projectName: "image-wizard-cli",
   defaults: {
     auth_cookie_u: "_U:",
-    uth_cookie_srchhpgusr: "SRCHHPGUSR:",
+    auth_cookie_srchhpgusr: "SRCHHPGUSR:",
+    output_dir: "./output",
+    num_images: 4,
   },
 });
 

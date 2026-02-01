@@ -2,7 +2,7 @@ import typescriptEslint from "typescript-eslint";
 
 export default [
   {
-    ignores: ["dist","output",".venv", "bing_create.egg-info", "*.py"],
+    ignores: ["dist", "output", ".venv", "bing_create.egg-info", "*.py"],
   },
   {
     files: ["**/*.ts"],

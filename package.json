@@ -2,17 +2,23 @@
   "name": "@involvex/image-wizard-cli",
   "version": "0.0.1",
   "description": "Cli to generate ai images with bing",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/involvex/image-wizard-cli.git"
+  },
   "funding": {
     "type": "github",
     "url": "https://github.com/sponsors/involvex"
   },
+  "license": "MIT",
+  "author": "involvex",
   "type": "module",
   "bin": {
     "image-wizard": "dist/index.js"
   },
   "scripts": {
     "prebuild": "bun run format && bun run lint:fix && bun run typecheck",
-    "build": "bun build --target node --outdir dist --entry src/index.ts",
+    "build": "bun build --target node --outfile dist/index.js --entry src/index.ts --banner '#!/usr/bin/env bun'",
     "dev": "bun run ./src/index.ts",
     "format": "prettier --write .",
     "lint": "eslint . --ext .ts",
@@ -22,12 +28,6 @@
     "test": "bun test",
     "typecheck": "tsc --noEmit"
   },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/involvex/image-wizard-cli.git"
-  },
-  "author": "involvex",
-  "license": "MIT",
   "dependencies": {
     "@clack/prompts": "1.0.0",
     "@google/genai": "1.39.0",
@@ -36,8 +36,10 @@
     "commander": "14.0.3",
     "conf": "15.0.2",
     "dotenv": "17.2.3",
+    "execa": "9.6.1",
     "fs-extra": "11.3.3",
     "mime": "4.1.0",
+    "open": "11.0.0",
     "picocolors": "1.1.1"
   },
   "devDependencies": {

@@ -14,3 +14,8 @@ dist
 output
 .env
 bing_create.egg-info
+__pycache__
+node_modules
+dist
+.mypy_cache
+.mira/mira.log
