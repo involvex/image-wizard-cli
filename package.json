@@ -1,10 +1,24 @@
 {
   "name": "@involvex/image-wizard-cli",
   "version": "0.0.1",
-  "description": "Cli to generate ai images with bing",
+  "description": "CLI to generate AI images with Bing DALL-E 3",
+  "keywords": [
+    "ai",
+    "image",
+    "generator",
+    "dall-e",
+    "bing",
+    "cli",
+    "openai",
+    "image-generation"
+  ],
+  "homepage": "https://github.com/involvex/image-wizard-cli#readme",
+  "bugs": {
+    "url": "https://github.com/involvex/image-wizard-cli/issues"
+  },
   "repository": {
     "type": "git",
-    "url": "https://github.com/involvex/image-wizard-cli.git"
+    "url": "git+https://github.com/involvex/image-wizard-cli.git"
   },
   "funding": {
     "type": "github",
@@ -16,6 +30,11 @@
   "bin": {
     "image-wizard": "dist/index.js"
   },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "prebuild": "bun run format && bun run lint:fix && bun run typecheck",
     "build": "bun build --target node --outfile dist/index.js --entry src/index.ts --banner '#!/usr/bin/env bun'",
@@ -23,6 +42,7 @@
     "format": "prettier --write .",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
+    "prepublishOnly": "bun run build",
     "start": "bun run ./dist/index.js",
     "pretest": "bun run format && bun run lint:fix && bun run typecheck",
     "test": "bun test",
@@ -30,28 +50,23 @@
   },
   "dependencies": {
     "@clack/prompts": "1.0.0",
-    "@google/genai": "1.39.0",
-    "@types/fs-extra": "11.0.4",
-    "@types/mime": "4.0.0",
     "commander": "14.0.3",
     "conf": "15.0.2",
-    "dotenv": "17.2.3",
     "execa": "9.6.1",
-    "fs-extra": "11.3.3",
-    "mime": "4.1.0",
     "open": "11.0.0",
     "picocolors": "1.1.1"
   },
   "devDependencies": {
     "@types/node": "25.1.0",
     "eslint": "9.39.2",
-    "jiti": "2.6.1",
     "prettier": "3.8.1",
     "prettier-plugin-organize-imports": "4.3.0",
     "prettier-plugin-packagejson": "3.0.0",
     "prettier-plugin-sort-imports": "1.8.9",
-    "tsup": "8.5.1",
     "typescript": "5.9.3",
     "typescript-eslint": "8.54.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   }
 }

@@ -1,0 +1,50 @@
+# Source files (we publish dist instead)
+src/
+
+# Development files
+.bun-cache
+.claude
+.gemini
+.github
+
+# Python artifacts (user must install bing-create separately)
+bing_create/
+*.py
+__pycache__/
+.pytest_cache/
+*.egg-info/
+.venv/
+pip-selfcheck.json
+
+# Development config
+.prettierrc
+eslint.config.mjs
+tsconfig.json
+
+# Cache and temp
+node_modules/
+output/
+.env
+
+# IDE
+.mypy_cache
+.vscode/
+.idea/
+
+# Mira (session management)
+.mira/
+
+# Tests
+test/
+tests/
+*.test.ts
+
+# Git
+.git/
+.gitignore
+
+# Lock files (use package-lock.json from npm publish)
+bun.lock
+
+# README for devs (keep the main one)
+CONTRIBUTING.md

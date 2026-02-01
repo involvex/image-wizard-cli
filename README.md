@@ -1,82 +1,138 @@
 # Image Wizard CLI
 
+> Generate AI images from text prompts in your terminal using Bing's DALL-E 3 service
+
+## Features
+
+- Interactive setup wizard for authentication
+- Generate multiple images at once
+- Custom output directories
+- Beautiful CLI interface powered by [@clack/prompts](https://github.com/natemoo-re/clack)
+- Works on Windows, macOS, and Linux
+
+## Prerequisites
+
+- **Node.js** 18+ or **Bun**
+- **Python** 3.7+
+- Python package: `bing-create` ([https://github.com/jad_gs20/bing-create](https://github.com/jad_gs20/bing-create))
+
 ## Installation
 
 ```bash
+# Install the Python package first
+pip install bing-create
+
+# Install this CLI globally
 npm install -g @involvex/image-wizard-cli
 ```
 
-## Usage
+## Quick Start
+
+### 1. Setup
+
+Run the interactive setup to configure your Bing authentication:
 
 ```bash
-image-wizard <prompt>
-```
-
-## Configuration
-
-~/.image-wizard/config.json
-
-## Example
-
-```json
-{
-  "auth_cookie_u": "1HE7aP-EHWqSHcxPZO-XnjiJYquS1a0FRh3JQMwS-7TIxlCUjNgXb3zzQ4p80B6tgLIrq8PqfjIYf7XPWP7Ox8PZcg6kLs19Kz3sS7VQeYPhsKBANz8Q0he3vrn_O_w2rRAsHURVxhKaW2oKcSxXuXxgrZ8NR5mmTdp_IYQQ55IhWUE_Zr9alttdmUDqGMncLh5FzwUfZnM-2vdVsRiOS6g",
-  "auth_cookie_srchhpgusr": "SRCHLANG=de&PV=19.0.0&PREFCOL=1&BRW=NOTP&BRH=M&CW=771&CH=914&SCW=756&SCH=914&DPR=1.0&UTC=60&PRVCW=1218&PRVCH=914&B=0&EXLTT=32&HV=1769901195&HVE=CfDJ8HAK7eZCYw5BifHFeUHnkJFvqEePzUT4Ba5yC4HMf7gQVgS1Kg0rMLGn9T2VOrJvwOz33K2tVOp8qzdO3OXMoSuEjlNzwMNdEmHrLsQF2YgBeeO-Aa9C8ClOxJM7TxsGgGU9OX_u2kV6EZd4pDsKT1F7xFQEtr7hXCMHIq2ll0BX_vhf6FTjVXFUqkJoZ8joxQ&AV=14&ADV=14&RB=1769897306292&MB=1767735921711&WEBTHEME=1",
-  "output_dir": "output",
-  "num_images": 5
-}
-```
-
-## Setup
-
-```bash
-npm install -g @involvex/image-wizard-cli
 image-wizard setup
 ```
 
-## Prompt example
+This will:
+
+- Open bing.com in your browser
+- Guide you through extracting your authentication cookies
+- Save them securely to your config file
+
+**Manual Cookie Extraction:**
+
+Open bing.com in your browser, open DevTools (F12), and run in the console:
+
+```javascript
+console.log(
+  `_U:\n${document.cookie.match(/(?:^|;\s*)_U=(.*?)(?:;|$)/)[1]}\n\nSRCHHPGUSR:\n${document.cookie.match(/(?:^|;\s*)SRCHHPGUSR=(.*?)(?:;|$)/)[1]}`,
+);
+```
+
+### 2. Generate Images
 
 ```bash
+# Basic usage
 image-wizard "A photo of an astronaut riding a horse on Mars"
-image-wizard "A photo of an astronaut riding a horse on Mars" --amount 5 --outputdir output
-image-wizard "A photo of an astronaut riding a horse on Mars" -n 6 -o output
+
+# With options
+image-wizard "A futuristic city at sunset" -n 4 -o ./output
+
+# Short options
+image-wizard "A beautiful landscape" --number 6 --output my-images
 ```
 
-## Tech
+## Options
 
-node, bun, python, typescript, bing, clack (for cli ui)
+| Option           | Short | Default    | Description                  |
+| ---------------- | ----- | ---------- | ---------------------------- |
+| `--number <num>` | `-n`  | `4`        | Number of images to generate |
+| `--output <dir>` | `-o`  | `./output` | Output directory for images  |
 
-NodeJs / Bun wrapper for python package bing-create
+## Commands
 
-## Description
+### `image-wizard setup`
 
-use "image-wizard setup" that will open a browser session with https://bing.com open and user logged , then executes in the browser console:
+Configure authentication cookies for Bing Image Creator.
+
+### `image-wizard <prompt> [options]`
+
+Generate images from a text prompt.
+
+## Configuration
+
+Config file locations by platform:
+
+- **Windows**: `%APPDATA%\image-wizard-cli-nodejs\Config\config.json`
+- **macOS**: `~/Library/Application Support/image-wizard-cli-nodejs/config.json`
+- **Linux**: `~/.config/image-wizard-cli-nodejs/config.json`
+
+Example config:
+
+```json
+{
+  "auth_cookie_u": "your-u-cookie-here",
+  "auth_cookie_srchhpgusr": "your-srchhpgusr-cookie-here",
+  "output_dir": "./output",
+  "num_images": 4
+}
+```
+
+## Development
 
 ```bash
-console.log(`_U:\n${document.cookie.match(/(?:^|;\s*)_U=(.*?)(?:;|$)/)[1]}\n\nSRCHHPGUSR:\n${document.cookie.match(/(?:^|;\s*)SRCHHPGUSR=(.*?)(?:;|$)/)[1]}`)
+# Clone the repo
+git clone https://github.com/involvex/image-wizard-cli.git
+
+# Install dependencies
+bun install
+
+# Run in development mode
+bun run dev "A test prompt"
+
+# Build for production
+bun run build
+
+# Run tests
+bun test
 ```
 
-Then it will fetch from console output:
+## Tech Stack
 
-```bash
-_U:
-1HE7aP-EHWqSHcxPZO-XnjiJYquS1a0FRh3JQMwS-7TIxlCUjNgXb3zzQ4p80B6tgLIrq8PqfjIYf7XPWP7Ox8PZcg6kLs19Kz3sS7VQeYPhsKBANz8Q0he3vrn_O_w2rRAsHURVxhKaW2oKcSxXuXxgrZ8NR5mmTdp_IYQQ55IhWUE_Zr9alttdmUDqGMncLh5FzwUfZnM-2vdVsRiOS6g
+- **Runtime**: Node.js / Bun
+- **Language**: TypeScript
+- **CLI Framework**: Commander.js
+- **UI Library**: @clack/prompts
+- **Python Integration**: execa
+- **Backend**: bing-create (Python)
 
-SRCHHPGUSR:
-SRCHLANG=de&PV=19.0.0&PREFCOL=1&BRW=NOTP&BRH=M&CW=771&CH=914&SCW=756&SCH=914&DPR=1.0&UTC=60&PRVCW=1218&PRVCH=914&B=0&EXLTT=32&HV=1769901195&HVE=CfDJ8HAK7eZCYw5BifHFeUHnkJFvqEePzUT4Ba5yC4HMf7gQVgS1Kg0rMLGn9T2VOrJvwOz33K2tVOp8qzdO3OXMoSuEjlNzwMNdEmHrLsQF2YgBeeO-Aa9C8ClOxJM7TxsGgGU9OX_u2kV6EZd4pDsKT1F7xFQEtr7hXCMHIq2ll0BX_vhf6FTjVXFUqkJoZ8joxQ&AV=14&ADV=14&RB=1769897306292&MB=1767735921711&WEBTHEME=1
-```
+## License
 
-and writes it into the config at: "~/.image-wizard/config.json"
+MIT © [involvex](https://github.com/involvex)
 
-after users can run:
+## Funding
 
-```bash
-image-wizard <prompt>
-```
-
-that will execute the python script from @/bing-create/create.py and generates the images.
-
-## Todo
-
-Write the typescript file for the "bin" (src/index.ts).
-Setup create.py to use configured settings or env vars / parameter.
+[GitHub Sponsors](https://github.com/sponsors/involvex)
