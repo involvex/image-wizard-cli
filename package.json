@@ -7,10 +7,25 @@
     "image",
     "generator",
     "dall-e",
+    "dalle",
+    "dall-e-3",
     "bing",
+    "bing-image-creator",
     "cli",
     "openai",
-    "image-generation"
+    "image-generation",
+    "ai-art",
+    "text-to-image",
+    "stable-diffusion",
+    "midjourney",
+    "image-generator",
+    "ai-images",
+    "artificial-intelligence",
+    "machine-learning",
+    "python",
+    "automation",
+    "terminal",
+    "command-line"
   ],
   "homepage": "https://github.com/involvex/image-wizard-cli#readme",
   "bugs": {
@@ -32,6 +47,8 @@
   },
   "files": [
     "dist",
+    "bing_create",
+    "requirements.txt",
     "README.md",
     "LICENSE"
   ],
@@ -40,6 +57,7 @@
     "build": "bun build --target node --outfile dist/index.js --entry src/index.ts --banner '#!/usr/bin/env bun'",
     "dev": "bun run ./src/index.ts",
     "format": "prettier --write .",
+    "postinstall": "python -c \"import sys; sys.exit(0 if sys.version_info >= (3, 7) else 1)\" 2>/dev/null || echo \"Python 3.7+ required\" && pip install -q aiofiles httpx 2>/dev/null || true",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
     "prepublishOnly": "bun run build",

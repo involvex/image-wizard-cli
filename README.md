@@ -1,5 +1,8 @@
 # Image Wizard CLI
 
+[![npm version](https://badge.fury.io/js/%40involvex%2Fimage-wizard-cli.svg)](https://www.npmjs.com/package/@involvex/image-wizard-cli)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 > Generate AI images from text prompts in your terminal using Bing's DALL-E 3 service
 
 ## Features
@@ -9,20 +12,18 @@
 - Custom output directories
 - Beautiful CLI interface powered by [@clack/prompts](https://github.com/natemoo-re/clack)
 - Works on Windows, macOS, and Linux
+- **Bundled Python backend** - no manual Python setup required
 
 ## Prerequisites
 
 - **Node.js** 18+ or **Bun**
-- **Python** 3.7+
-- Python package: `bing-create` ([https://github.com/jad_gs20/bing-create](https://github.com/jad_gs20/bing-create))
+- **Python** 3.7+ (for the image generation backend)
+
+> Python dependencies are installed automatically when you install this package.
 
 ## Installation
 
 ```bash
-# Install the Python package first
-pip install bing-create
-
-# Install this CLI globally
 npm install -g @involvex/image-wizard-cli
 ```
 
@@ -36,13 +37,9 @@ Run the interactive setup to configure your Bing authentication:
 image-wizard setup
 ```
 
-This will:
+This will open bing.com in your browser and guide you through extracting your authentication cookies.
 
-- Open bing.com in your browser
-- Guide you through extracting your authentication cookies
-- Save them securely to your config file
-
-**Manual Cookie Extraction:**
+**Manual Cookie Extraction (if needed):**
 
 Open bing.com in your browser, open DevTools (F12), and run in the console:
 
@@ -127,7 +124,7 @@ bun test
 - **CLI Framework**: Commander.js
 - **UI Library**: @clack/prompts
 - **Python Integration**: execa
-- **Backend**: bing-create (Python)
+- **Backend**: bing-create (bundled)
 
 ## License
 

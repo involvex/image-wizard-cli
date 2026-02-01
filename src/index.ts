@@ -105,26 +105,47 @@ program
     p.intro(color.cyan("🔐 Image Wizard Setup"));
 
     try {
+      // First, open browser and show instructions
+      const openBrowser = (await p.confirm({
+        message: "Open bing.com in your browser to get your cookies?",
+        initialValue: true,
+      })) as boolean | symbol;
+
+      if (openBrowser === true) {
+        p.log.message(color.cyan("\nOpening bing.com in your browser..."));
+        await open("https://www.bing.com");
+
+        p.log.message(color.yellow("\n📋 Cookie Extraction Instructions:"));
+        p.log.message(
+          "1. Open Developer Tools (F12 or right-click → Inspect)\n" +
+            "2. Go to the Application tab → Cookies → https://www.bing.com\n" +
+            "3. Find the _U cookie and copy its value\n" +
+            "4. Find the SRCHHPGUSR cookie and copy its value\n\n" +
+            color.bold("Or run this in the browser console:"),
+        );
+        p.log.message(
+          color.gray(
+            `document.cookie.match(/_U=([^;]+)/)?.[1];
+document.cookie.match(/SRCHHPGUSR=([^;]+)/)?.[1];`,
+          ),
+        );
+        p.log.message("");
+      }
+
+      // Then collect cookies
       const response = await p.group(
         {
-          openBrowser: () =>
-            p.confirm({
-              message:
-                "Would you like to open bing.com in your browser to get your cookies?",
-              initialValue: true,
-            }),
-
           auth_cookie_u: () =>
             p.text({
-              message: "Enter your _U cookie value:",
-              placeholder: "Starts with 'abcd...' (long base64 string)",
+              message: "Paste your _U cookie value:",
+              placeholder: "Long base64 string starting with characters...",
               validate: value => (!value ? "Cookie is required" : undefined),
             }),
 
           auth_cookie_srchhpgusr: () =>
             p.text({
-              message: "Enter your SRCHHPGUSR cookie value:",
-              placeholder: "Cookie value",
+              message: "Paste your SRCHHPGUSR cookie value:",
+              placeholder: "Cookie value (may contain key=value pairs)",
               validate: value => (!value ? "Cookie is required" : undefined),
             }),
 
@@ -159,28 +180,6 @@ program
         },
       );
 
-      // Open browser if requested
-      if (response.openBrowser) {
-        p.log.message(color.cyan("Opening bing.com in your browser..."));
-        await open("https://www.bing.com");
-        p.log.message(color.yellow("\n📋 Cookie Extraction Instructions:"));
-        p.log.message(
-          "1. Open Developer Tools (F12 or right-click → Inspect)\n" +
-            "2. Go to the Application tab\n" +
-            "3. Expand Cookies → https://www.bing.com\n" +
-            "4. Find the _U cookie and copy its value\n" +
-            "5. Find the SRCHHPGUSR cookie and copy its value\n\n" +
-            color.gray("Or use this JavaScript snippet in the console:"),
-        );
-        p.log.message(
-          color.gray(
-            `document.cookie.match(/_U=([^;]+)/)?.[1];
-document.cookie.match(/SRCHHPGUSR=([^;]+)/)?.[1];`,
-          ),
-        );
-        p.log.message("");
-      }
-
       // Save config
       const configData: ConfigSchema = {
         auth_cookie_u: response.auth_cookie_u as string,
@@ -193,7 +192,7 @@ document.cookie.match(/SRCHHPGUSR=([^;]+)/)?.[1];`,
       config.set(configData);
 
       p.note(
-        `Cookies configured: ${response.auth_cookie_u?.substring(0, 10)}...`,
+        `Cookies configured: ${(response.auth_cookie_u as string).substring(0, 10)}...`,
         color.green("Configuration Saved"),
       );
 
