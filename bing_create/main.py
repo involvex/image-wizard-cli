@@ -58,7 +58,11 @@ class ImageGenerator:
 
             # Validating that request succeeded
             if response.status_code != 302:
-                raise Exception("🛑 Request to https://bing.com/ failed! (Redirect)")
+                import sys
+                print(f"[DEBUG] Status code: {response.status_code}", file=sys.stderr, flush=True)
+                print(f"[DEBUG] Response headers: {dict(response.headers)}", file=sys.stderr, flush=True)
+                print(f"[DEBUG] Response text (first 1000 chars): {response.text[:1000]}", file=sys.stderr, flush=True)
+                raise Exception(f"🛑 Request to https://bing.com/ failed! (Redirect) - Status: {response.status_code}")
 
             self.__log(f"✅ Request to https://bing.com/ sent! (cycle: {cycle})")
 

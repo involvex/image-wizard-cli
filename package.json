@@ -57,7 +57,7 @@
     "build": "bun build --target node --outfile dist/index.js --entry src/index.ts --banner '#!/usr/bin/env bun'",
     "dev": "bun run ./src/index.ts",
     "format": "prettier --write .",
-    "postinstall": "python -c \"import sys; sys.exit(0 if sys.version_info >= (3, 7) else 1)\" 2>/dev/null || echo \"Python 3.7+ required\" && pip install -q aiofiles httpx 2>/dev/null || true",
+    "postinstall": "python -c \"import sys; sys.exit(0 if sys.version_info >= (3, 7) else 1)\" 2>nul || py -c \"import sys; sys.exit(0 if sys.version_info >= (3, 7) else 1)\" 2>nul || echo Python 3.7+ required && (pip install -q aiofiles httpx 2>nul || py -m pip install -q aiofiles httpx 2>nul) || exit 0",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
     "prepublishOnly": "bun run build",

@@ -1,4 +1,16 @@
+import { fileURLToPath } from "url";
 import { execa } from "execa";
+import path from "path";
+
+// Get the directory of the current module (dist/index.js after bundling)
+// Then resolve bing_create relative to the package root
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const pythonScriptPath = path.join(
+  path.dirname(__dirname), // Go up from dist/ to package root
+  "bing_create",
+  "main.py",
+);
 
 export interface GenerateImagesParams {
   prompt: string;
@@ -14,14 +26,32 @@ export interface GenerateImagesResult {
   error?: string;
 }
 
+// Determine Python command (python for Unix/Mac, py for Windows)
+function getPythonCommand(): string {
+  try {
+    // On Windows, try 'py' first (Python Launcher for Windows)
+    if (process.platform === "win32") {
+      return "py";
+    }
+  } catch {
+    // Fall through to default
+  }
+  return "python";
+}
+
 export async function generateImages(
   params: GenerateImagesParams,
 ): Promise<GenerateImagesResult> {
   try {
+    // Debug: log the resolved Python script path
+    console.error(`[DEBUG] Python script path: ${pythonScriptPath}`);
+    console.error(`[DEBUG] __filename: ${__filename}`);
+    console.error(`[DEBUG] __dirname: ${__dirname}`);
+
     const { stdout } = await execa(
-      "python",
+      getPythonCommand(),
       [
-        "bing_create/main.py",
+        pythonScriptPath,
         "--u",
         params.authCookieU,
         "--s",
