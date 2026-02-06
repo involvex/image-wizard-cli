@@ -1,5 +1,5 @@
+import { spawn } from "child_process";
 import { fileURLToPath } from "url";
-import { execa } from "execa";
 import path from "path";
 
 // Get the directory of the current module (dist/index.js after bundling)
@@ -26,61 +26,84 @@ export interface GenerateImagesResult {
   error?: string;
 }
 
-// Determine Python command (python for Unix/Mac, py for Windows)
+// Determine Python command
 function getPythonCommand(): string {
-  try {
-    // On Windows, try 'py' first (Python Launcher for Windows)
-    if (process.platform === "win32") {
-      return "py";
-    }
-  } catch {
-    // Fall through to default
-  }
+  // Use 'python' on all platforms
   return "python";
 }
 
 export async function generateImages(
   params: GenerateImagesParams,
 ): Promise<GenerateImagesResult> {
-  try {
-    // Debug: log the resolved Python script path
-    console.error(`[DEBUG] Python script path: ${pythonScriptPath}`);
-    console.error(`[DEBUG] __filename: ${__filename}`);
-    console.error(`[DEBUG] __dirname: ${__dirname}`);
+  return new Promise(resolve => {
+    const args = [
+      pythonScriptPath,
+      "--u",
+      params.authCookieU,
+      "--s",
+      params.authCookieSrchhpgusr,
+      "--prompt",
+      params.prompt,
+      "--number",
+      params.numImages.toString(),
+      "--output",
+      params.outputDir,
+    ];
 
-    const { stdout } = await execa(
-      getPythonCommand(),
-      [
-        pythonScriptPath,
-        "--u",
-        params.authCookieU,
-        "--s",
-        params.authCookieSrchhpgusr,
-        "--prompt",
-        params.prompt,
-        "--number",
-        params.numImages.toString(),
-        "--output",
-        params.outputDir,
-      ],
-      {
-        timeout: 300000, // 5 minutes
-        env: { PYTHONIOENCODING: "utf-8" },
-      },
-    );
+    console.error(`[Node] Starting: ${getPythonCommand()} ${args.join(" ")}`);
 
-    // Parse image URLs from stdout
-    const images = stdout
-      .split("\n")
-      .filter(line => line.includes("🖼"))
-      .map(line => line.replace("🖼 ", "").trim());
+    const pythonProcess = spawn(getPythonCommand(), args, {
+      env: { ...process.env, PYTHONIOENCODING: "utf-8" },
+      windowsHide: true,
+    });
 
-    return { success: true, images };
-  } catch (error: unknown) {
-    const err = error as { stderr?: string; message?: string };
-    return {
-      success: false,
-      error: err.stderr || err.message || "Unknown error",
-    };
-  }
+    let stdout = "";
+    let stderr = "";
+
+    pythonProcess.stdout?.on("data", data => {
+      const text = data.toString();
+      console.error(`[Node] Python stdout: ${text}`);
+      stdout += text;
+    });
+
+    pythonProcess.stderr?.on("data", data => {
+      const text = data.toString();
+      console.error(`[Node] Python stderr: ${text}`);
+      stderr += text;
+    });
+
+    pythonProcess.on("error", error => {
+      console.error(`[Node] Python process error:`, error);
+      resolve({
+        success: false,
+        error: error.message,
+      });
+    });
+
+    pythonProcess.on("close", code => {
+      console.error(`[Node] Python exited with code: ${code}`);
+      if (code === 0) {
+        // Parse image URLs from stdout
+        const images = stdout
+          .split("\n")
+          .filter(line => line.includes("🖼"))
+          .map(line => line.replace("🖼 ", "").trim());
+        resolve({ success: true, images });
+      } else {
+        resolve({
+          success: false,
+          error: stderr || stdout || `Process exited with code ${code}`,
+        });
+      }
+    });
+
+    // Timeout after 5 minutes
+    setTimeout(() => {
+      pythonProcess.kill();
+      resolve({
+        success: false,
+        error: "Timed out after 5 minutes",
+      });
+    }, 300000);
+  });
 }

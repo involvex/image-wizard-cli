@@ -4,7 +4,8 @@
       "Bash(npm link:*)",
       "Bash(image-wizard:*)",
       "Bash(C:\\\\nvm4w\\\\nodejs\\\\image-wizard.cmd:*)",
-      "Bash(npm pack:*)"
+      "Bash(npm pack:*)",
+      "Bash(py:*)"
     ]
   }
 }
