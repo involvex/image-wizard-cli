@@ -4,6 +4,7 @@ import { generateImages } from "./python";
 import * as p from "@clack/prompts";
 import { Command } from "commander";
 import { fileURLToPath } from "url";
+import { runBatch } from "./batch";
 import pkg from "../package.json";
 import color from "picocolors";
 import path from "path";
@@ -199,5 +200,29 @@ document.cookie.match(/SRCHHPGUSR=([^;]+)/)?.[1];`,
       process.exit(1);
     }
   });
+
+// Batch command
+program
+  .command("batch")
+  .description("Generate images in batch mode from a manifest file")
+  .argument("<manifest.json>", "Path to batch manifest JSON file")
+  .option(
+    "--dry-run",
+    "Show what would be generated without actually generating",
+  )
+  .option("--delay <seconds>", "Delay between jobs in seconds", "20")
+  .option("--max-per-day <n>", "Maximum number of prompts per day", "200")
+  .action(
+    async (
+      manifestPath: string,
+      options: { dryRun?: boolean; delay: string; maxPerDay: string },
+    ) => {
+      await runBatch(manifestPath, {
+        dryRun: options.dryRun,
+        delay: parseInt(options.delay, 10) || 20,
+        maxPerDay: parseInt(options.maxPerDay, 10) || 200,
+      });
+    },
+  );
 
 program.parse(process.argv);

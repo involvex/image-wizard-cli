@@ -1,0 +1,191 @@
+{
+  "style": "pixel art game asset, 16-bit SNES era style, 3/4 isometric view, single object centered, solid flat magenta #FF00FF background, no text, no border, no shadow on background, crisp hard pixel edges, limited 24 color palette, dark fantasy rift world",
+  "outDir": "out",
+  "jobs": [
+    {
+      "id": "tile_hub_0",
+      "category": "tiles",
+      "prompt": "seamless isometric ground tile, diamond shaped, grass"
+    },
+    {
+      "id": "tile_hub_1",
+      "category": "tiles",
+      "prompt": "seamless isometric ground tile, diamond shaped, cobblestone"
+    },
+    {
+      "id": "tile_hub_2",
+      "category": "tiles",
+      "prompt": "seamless isometric ground tile, diamond shaped, dirt path"
+    },
+    {
+      "id": "tile_hub_3",
+      "category": "tiles",
+      "prompt": "seamless isometric ground tile, diamond shaped, mossy stone"
+    },
+    {
+      "id": "tile_hub_4",
+      "category": "tiles",
+      "prompt": "seamless isometric ground tile, diamond shaped, worn cobblestone"
+    },
+    {
+      "id": "tile_dungeon_0",
+      "category": "tiles",
+      "prompt": "seamless isometric ground tile, diamond shaped, cracked dark stone floor"
+    },
+    {
+      "id": "tile_dungeon_1",
+      "category": "tiles",
+      "prompt": "seamless isometric ground tile, diamond shaped, glowing rune floor"
+    },
+    {
+      "id": "tile_dungeon_2",
+      "category": "tiles",
+      "prompt": "seamless isometric ground tile, diamond shaped, cracked dark stone floor with moss"
+    },
+    {
+      "id": "prop_well",
+      "category": "props",
+      "prompt": "well"
+    },
+    {
+      "id": "prop_lantern",
+      "category": "props",
+      "prompt": "lantern"
+    },
+    {
+      "id": "prop_crate",
+      "category": "props",
+      "prompt": "crate"
+    },
+    {
+      "id": "prop_rock",
+      "category": "props",
+      "prompt": "rock"
+    },
+    {
+      "id": "prop_bush",
+      "category": "props",
+      "prompt": "bush"
+    },
+    {
+      "id": "prop_tent",
+      "category": "props",
+      "prompt": "tent"
+    },
+    {
+      "id": "prop_campfire",
+      "category": "props",
+      "prompt": "campfire"
+    },
+    {
+      "id": "prop_pillar",
+      "category": "props",
+      "prompt": "pillar"
+    },
+    {
+      "id": "prop_altar",
+      "category": "props",
+      "prompt": "altar"
+    },
+    {
+      "id": "prop_totem",
+      "category": "props",
+      "prompt": "totem"
+    },
+    {
+      "id": "prop_rubble",
+      "category": "props",
+      "prompt": "rubble"
+    },
+    {
+      "id": "prop_tree",
+      "category": "props",
+      "prompt": "tree"
+    },
+    {
+      "id": "prop_crystal_vein",
+      "category": "props",
+      "prompt": "crystal vein"
+    },
+    {
+      "id": "enemy_rift_goblin",
+      "category": "enemies",
+      "prompt": "full body character, idle pose, facing south-east, rift goblin"
+    },
+    {
+      "id": "enemy_shadow_wolf",
+      "category": "enemies",
+      "prompt": "full body character, idle pose, facing south-east, shadow wolf"
+    },
+    {
+      "id": "enemy_bone_archer",
+      "category": "enemies",
+      "prompt": "full body character, idle pose, facing south-east, bone archer"
+    },
+    {
+      "id": "enemy_rift_wraith",
+      "category": "enemies",
+      "prompt": "full body character, idle pose, facing south-east, rift wraith"
+    },
+    {
+      "id": "icon_sword",
+      "category": "icons",
+      "prompt": "inventory item icon, sword"
+    },
+    {
+      "id": "icon_axe",
+      "category": "icons",
+      "prompt": "inventory item icon, axe"
+    },
+    {
+      "id": "icon_staff",
+      "category": "icons",
+      "prompt": "inventory item icon, staff"
+    },
+    {
+      "id": "icon_bow",
+      "category": "icons",
+      "prompt": "inventory item icon, bow"
+    },
+    {
+      "id": "icon_helmet",
+      "category": "icons",
+      "prompt": "inventory item icon, helmet"
+    },
+    {
+      "id": "icon_chest_armor",
+      "category": "icons",
+      "prompt": "inventory item icon, chest armor"
+    },
+    {
+      "id": "icon_boots",
+      "category": "icons",
+      "prompt": "inventory item icon, boots"
+    },
+    {
+      "id": "icon_ring",
+      "category": "icons",
+      "prompt": "inventory item icon, ring"
+    },
+    {
+      "id": "icon_amulet",
+      "category": "icons",
+      "prompt": "inventory item icon, amulet"
+    },
+    {
+      "id": "icon_health_potion",
+      "category": "icons",
+      "prompt": "inventory item icon, health potion"
+    },
+    {
+      "id": "icon_mana_potion",
+      "category": "icons",
+      "prompt": "inventory item icon, mana potion"
+    },
+    {
+      "id": "icon_gold_coins",
+      "category": "icons",
+      "prompt": "inventory item icon, gold coins"
+    }
+  ]
+}
