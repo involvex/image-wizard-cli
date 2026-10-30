@@ -19,3 +19,5 @@ node_modules
 dist
 .mypy_cache
 .mira/mira.log
+.phases/
+bing_create/create.py

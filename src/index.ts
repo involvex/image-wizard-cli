@@ -191,10 +191,7 @@ document.cookie.match(/SRCHHPGUSR=([^;]+)/)?.[1];`,
       config.clear();
       config.set(configData);
 
-      p.note(
-        `Cookies configured: ${(response.auth_cookie_u as string).substring(0, 10)}...`,
-        color.green("Configuration Saved"),
-      );
+      p.note("Cookies configured", color.green("Configuration Saved"));
 
       p.outro(color.green("Setup complete! You can now generate images."));
     } catch (error: unknown) {

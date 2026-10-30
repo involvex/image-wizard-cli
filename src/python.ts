@@ -50,7 +50,22 @@ export async function generateImages(
       params.outputDir,
     ];
 
-    console.error(`[Node] Starting: ${getPythonCommand()} ${args.join(" ")}`);
+    const redactedArgs = [
+      pythonScriptPath,
+      "--u",
+      "***",
+      "--s",
+      "***",
+      "--prompt",
+      params.prompt,
+      "--number",
+      params.numImages.toString(),
+      "--output",
+      params.outputDir,
+    ];
+    console.error(
+      `[Node] Starting: ${getPythonCommand()} ${redactedArgs.join(" ")}`,
+    );
 
     const pythonProcess = spawn(getPythonCommand(), args, {
       env: { ...process.env, PYTHONIOENCODING: "utf-8" },
