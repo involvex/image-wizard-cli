@@ -7,6 +7,7 @@ import argparse
 import os
 import re
 import time
+from urllib.parse import quote
 
 print("[DEBUG] Before httpx import", file=sys.stderr, flush=True)
 import aiofiles
@@ -85,8 +86,9 @@ class ImageGenerator:
             self.__log(f"✅ Session established, status: {get_response.status_code}")
 
             # Sending request to https://bing.com/
+            encoded_prompt = quote(prompt, safe="")
             response = self.client.post(
-                url=f"https://www.bing.com/images/create?q={prompt}&rt=3&FORM=GENCRE",
+                url=f"https://www.bing.com/images/create?q={encoded_prompt}&rt=3&FORM=GENCRE",
                 data={"q": prompt, "qs": "ds"},
                 follow_redirects=False,
                 timeout=200,
@@ -137,20 +139,8 @@ class ImageGenerator:
                 response.headers["Location"].replace("&nfy=1", "").split("id=")[-1]
             )
             print(f"[DEBUG] Result ID: {result_id}", file=sys.stderr, flush=True)
-            results_url = f"https://www.bing.com/images/create/async/results/{result_id}?q={prompt}"
+            results_url = f"https://www.bing.com/images/create/async/results/{result_id}?q={encoded_prompt}"
             print(f"[DEBUG] Results URL: {results_url}", file=sys.stderr, flush=True)
-
-            # Verify that response does not contain errors
-            if "being reviewed" in response.text or "has been blocked" in response.text:
-                raise Exception("🛑 Prompt is being reviewed or blocked!")
-            if "image creator in more languages" in response.text:
-                raise Exception("🛑 Language is not supported by Bing yet!")
-
-            # Get redirect url
-            result_id = (
-                response.headers["Location"].replace("&nfy=1", "").split("id=")[-1]
-            )
-            results_url = f"https://www.bing.com/images/create/async/results/{result_id}?q={prompt}"
 
             # Wait for results
             self.__log(f"🕗 Awaiting generation... (cycle: {cycle})")
@@ -174,13 +164,16 @@ class ImageGenerator:
                             flush=True,
                         )
 
-                if time.time() - start_time > 60:  # Reduced timeout to 60 seconds
+                if time.time() - start_time > 300:  # Increased timeout to 300 seconds
                     print(
                         f"[DEBUG] Timeout! Final response: {response.text[:1000] if response.text else '(empty)'}",
                         file=sys.stderr,
                         flush=True,
                     )
-                    raise Exception("🛑 Waiting for results timed out!")
+                    print(
+                        "🛑 Waiting for results timed out!", file=sys.stderr, flush=True
+                    )
+                    sys.exit(2)
 
                 if response.status_code != 200:
                     raise Exception(
@@ -336,8 +329,9 @@ class AsyncImageGenerator:
             cycle += 1
 
             # Sending request to https://bing.com/
+            encoded_prompt = quote(prompt, safe="")
             response = await self.client.post(
-                url=f"https://www.bing.com/images/create?q={prompt}&rt=3&FORM=GENCRE",
+                url=f"https://www.bing.com/images/create?q={encoded_prompt}&rt=3&FORM=GENCRE",
                 data={"q": prompt, "qs": "ds"},
                 follow_redirects=False,
                 timeout=200,
@@ -359,7 +353,7 @@ class AsyncImageGenerator:
             result_id = (
                 response.headers["Location"].replace("&nfy=1", "").split("id=")[-1]
             )
-            results_url = f"https://www.bing.com/images/create/async/results/{result_id}?q={prompt}"
+            results_url = f"https://www.bing.com/images/create/async/results/{result_id}?q={encoded_prompt}"
 
             # Wait for results
             self.__log(f"🕗 Awaiting generation... (cycle: {cycle})")
@@ -367,8 +361,11 @@ class AsyncImageGenerator:
             while True:
                 response = await self.client.get(results_url)
 
-                if time.time() - start_time > 200:
-                    raise Exception("🛑 Waiting for results timed out!")
+                if time.time() - start_time > 300:
+                    print(
+                        "🛑 Waiting for results timed out!", file=sys.stderr, flush=True
+                    )
+                    sys.exit(2)
 
                 if response.status_code != 200:
                     raise Exception(

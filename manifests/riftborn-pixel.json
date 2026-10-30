@@ -1,5 +1,5 @@
 {
-  "style": "pixel art game asset, 16-bit SNES era style, 3/4 isometric view, single object centered, solid flat magenta #FF00FF background, no text, no border, no shadow on background, crisp hard pixel edges, limited 24 color palette, dark fantasy rift world",
+  "style": "pixel art game asset, 16-bit SNES era style, 3/4 isometric view, single object centered, solid flat magenta background, no text, no border, no shadow on background, crisp hard pixel edges, limited 24 color palette, dark fantasy rift world",
   "outDir": "out",
   "jobs": [
     {

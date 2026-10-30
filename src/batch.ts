@@ -144,6 +144,7 @@ export async function runBatch(
       let generatedFiles: string[] = [];
       let attempts = 0;
       const maxAttempts = 3; // initial + 2 retries = 3 attempts total
+      let lastError = "";
 
       while (attempts < maxAttempts && !success) {
         attempts++;
@@ -156,13 +157,38 @@ export async function runBatch(
             authCookieSrchhpgusr: cfg.auth_cookie_srchhpgusr,
           });
 
-          if (result.success && result.images && result.images.length > 0) {
-            success = true;
-            generatedFiles = result.images;
-          } else {
-            throw new Error(result.error || "Generation failed");
+          if (result.error) {
+            lastError = result.error;
+          }
+
+          // Check if there is at least one image file in tmpDir
+          try {
+            const tmpFilesCheck = fs.readdirSync(tmpDir);
+            if (tmpFilesCheck.length > 0) {
+              success = true;
+              generatedFiles = tmpFilesCheck.map(f => path.join(tmpDir, f));
+            } else if (
+              result.success &&
+              result.images &&
+              result.images.length > 0
+            ) {
+              success = true;
+              generatedFiles = result.images;
+            } else {
+              throw new Error(result.error || "Generation failed");
+            }
+          } catch (checkError) {
+            if (result.success && result.images && result.images.length > 0) {
+              success = true;
+              generatedFiles = result.images;
+            } else {
+              throw new Error(result.error || "Generation failed");
+            }
           }
         } catch (error: unknown) {
+          if ((error as Error).message) {
+            lastError = (error as Error).message;
+          }
           if (attempts < maxAttempts) {
             const waitTime = attempts === 1 ? 60000 : 120000; // 60s after first failure, 120s after second
             s.stop(
@@ -174,11 +200,9 @@ export async function runBatch(
             );
           } else {
             s.stop(color.red(`Failed ${job.id} after ${maxAttempts} attempts`));
-            p.log.error(
-              color.red(
-                `Error for ${job.id}: ${(error as Error).message || "Unknown error"}`,
-              ),
-            );
+            const errMsg =
+              lastError.length > 300 ? lastError.substring(0, 300) : lastError;
+            p.log.error(color.red(`Error for ${job.id}: ${errMsg}`));
           }
         }
       }

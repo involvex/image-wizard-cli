@@ -112,13 +112,13 @@ export async function generateImages(
       }
     });
 
-    // Timeout after 5 minutes
+    // Timeout after 6 minutes
     setTimeout(() => {
       pythonProcess.kill();
       resolve({
         success: false,
-        error: "Timed out after 5 minutes",
+        error: "Timed out after 6 minutes",
       });
-    }, 300000);
+    }, 360000);
   });
 }
