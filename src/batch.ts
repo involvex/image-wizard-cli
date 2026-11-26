@@ -1,5 +1,7 @@
 import config, { validateConfig } from "./config";
+import { buildSheetsForOutDir } from "./sheet";
 import { generateImages } from "./python";
+import { processAsset } from "./post";
 import * as p from "@clack/prompts";
 import color from "picocolors";
 import path from "path";
@@ -26,10 +28,12 @@ interface BatchManifestEntry {
   createdAt: string;
 }
 
-interface BatchOptions {
+export interface BatchOptions {
   dryRun?: boolean;
   delay?: number;
   maxPerDay?: number;
+  noPost?: boolean;
+  sheets?: boolean;
 }
 
 function sleep(ms: number): Promise<void> {
@@ -45,7 +49,7 @@ function getTodayString(): string {
 }
 
 function getBatchCounter(): { date: string; count: number } {
-  const store = config.store as any;
+  const store = config.store;
   if (store.batchCounter && store.batchCounter.date === getTodayString()) {
     return store.batchCounter;
   }
@@ -53,14 +57,13 @@ function getBatchCounter(): { date: string; count: number } {
 }
 
 function updateBatchCounter(count: number): void {
-  const store = config.store as any;
-  store.batchCounter = { date: getTodayString(), count };
-  config.set(store);
+  config.set("batchCounter", { date: getTodayString(), count });
 }
 
-function hasExistingImage(outDir: string, id: string): boolean {
+/** True if any file named `{id}_*` exists in the category directory. */
+export function hasExistingImage(categoryDir: string, id: string): boolean {
   try {
-    const entries = fs.readdirSync(outDir);
+    const entries = fs.readdirSync(categoryDir);
     return entries.some(entry => entry.startsWith(id + "_"));
   } catch {
     return false;
@@ -74,9 +77,10 @@ export async function runBatch(
   const dryRun = options.dryRun || false;
   const delaySeconds = options.delay !== undefined ? options.delay : 20;
   const maxPerDay = options.maxPerDay !== undefined ? options.maxPerDay : 200;
+  const noPost = options.noPost || false;
+  const sheets = options.sheets || false;
 
   try {
-    // Check config
     const cfg = config.store;
     if (!validateConfig(cfg)) {
       p.log.error(color.red("Configuration not found or invalid."));
@@ -86,14 +90,12 @@ export async function runBatch(
       process.exit(1);
     }
 
-    // Read manifest
     const manifestContent = fs.readFileSync(manifestPath, "utf-8");
     const manifest: BatchManifest = JSON.parse(manifestContent);
 
     const fullOutDir = manifest.outDir;
     const style = manifest.style;
 
-    // Ensure directories exist
     if (!dryRun) {
       fs.mkdirSync(fullOutDir, { recursive: true });
     }
@@ -106,8 +108,7 @@ export async function runBatch(
       const categoryDir = path.join(fullOutDir, job.category);
       const numImages = job.n !== undefined ? job.n : 1;
 
-      // Check if already exists
-      if (hasExistingImage(fullOutDir, job.id)) {
+      if (hasExistingImage(categoryDir, job.id)) {
         p.log.info(
           color.yellow(`SKIP ${job.id} (${job.category}) - already exists`),
         );
@@ -121,7 +122,6 @@ export async function runBatch(
         continue;
       }
 
-      // Check daily limit
       const counter = getBatchCounter();
       if (counter.count >= maxPerDay) {
         p.log.error(
@@ -132,7 +132,6 @@ export async function runBatch(
         break;
       }
 
-      // Create necessary directories
       fs.mkdirSync(categoryDir, { recursive: true });
       const tmpDir = path.join(fullOutDir, ".tmp", job.id);
       fs.mkdirSync(tmpDir, { recursive: true });
@@ -143,7 +142,7 @@ export async function runBatch(
       let success = false;
       let generatedFiles: string[] = [];
       let attempts = 0;
-      const maxAttempts = 3; // initial + 2 retries = 3 attempts total
+      const maxAttempts = 3;
       let lastError = "";
 
       while (attempts < maxAttempts && !success) {
@@ -161,36 +160,29 @@ export async function runBatch(
             lastError = result.error;
           }
 
-          // Check if there is at least one image file in tmpDir
-          try {
-            const tmpFilesCheck = fs.readdirSync(tmpDir);
-            if (tmpFilesCheck.length > 0) {
-              success = true;
-              generatedFiles = tmpFilesCheck.map(f => path.join(tmpDir, f));
-            } else if (
-              result.success &&
-              result.images &&
-              result.images.length > 0
-            ) {
-              success = true;
-              generatedFiles = result.images;
-            } else {
-              throw new Error(result.error || "Generation failed");
-            }
-          } catch (checkError) {
-            if (result.success && result.images && result.images.length > 0) {
-              success = true;
-              generatedFiles = result.images;
-            } else {
-              throw new Error(result.error || "Generation failed");
-            }
+          const tmpFilesCheck = fs.existsSync(tmpDir)
+            ? fs.readdirSync(tmpDir).filter(f => !f.startsWith("."))
+            : [];
+
+          if (tmpFilesCheck.length > 0) {
+            success = true;
+            generatedFiles = tmpFilesCheck.map(f => path.join(tmpDir, f));
+          } else if (
+            result.success &&
+            result.images &&
+            result.images.length > 0
+          ) {
+            success = true;
+            generatedFiles = result.images;
+          } else {
+            throw new Error(result.error || "Generation failed");
           }
         } catch (error: unknown) {
           if ((error as Error).message) {
             lastError = (error as Error).message;
           }
           if (attempts < maxAttempts) {
-            const waitTime = attempts === 1 ? 60000 : 120000; // 60s after first failure, 120s after second
+            const waitTime = attempts === 1 ? 60000 : 120000;
             s.stop(
               `Failed attempt ${attempts}, retrying in ${waitTime / 1000}s...`,
             );
@@ -208,13 +200,18 @@ export async function runBatch(
       }
 
       if (!success) {
-        // Clean up tmp dir if it exists
         try {
           if (fs.existsSync(tmpDir)) {
             fs.rmSync(tmpDir, { recursive: true, force: true });
           }
-        } catch {}
-        continue; // move to next job
+        } catch (cleanupError: unknown) {
+          p.log.warn(
+            color.yellow(
+              `Could not clean tmp for ${job.id}: ${(cleanupError as Error).message}`,
+            ),
+          );
+        }
+        continue;
       }
 
       s.stop(
@@ -223,18 +220,42 @@ export async function runBatch(
         ),
       );
 
-      // Move files from tmp to category dir with proper naming
       const movedFiles: string[] = [];
       try {
         const tmpFiles = fs.readdirSync(tmpDir);
         for (let j = 0; j < tmpFiles.length; j++) {
           const tmpFile = tmpFiles[j];
-          const ext = path.extname(tmpFile);
-          const newName = `${job.id}_${j}.${ext.replace(".", "")}`;
           const srcPath = path.join(tmpDir, tmpFile);
-          const destPath = path.join(categoryDir, newName);
-          fs.renameSync(srcPath, destPath);
-          movedFiles.push(destPath);
+
+          if (noPost) {
+            const ext = path.extname(tmpFile).replace(".", "") || "jpeg";
+            const destPath = path.join(categoryDir, `${job.id}_${j}.${ext}`);
+            fs.renameSync(srcPath, destPath);
+            movedFiles.push(destPath);
+          } else {
+            const destPath = path.join(categoryDir, `${job.id}_${j}.png`);
+            const postSpinner = p.spinner();
+            postSpinner.start(`Post-processing ${job.id}_${j}...`);
+            try {
+              await processAsset(srcPath, destPath, {
+                category: job.category,
+              });
+              postSpinner.stop(color.green(`Processed ${job.id}_${j}.png`));
+              movedFiles.push(destPath);
+            } catch (postError: unknown) {
+              postSpinner.stop(color.red(`Post-process failed`));
+              p.log.error(
+                color.red(
+                  `Post-process ${job.id}_${j}: ${(postError as Error).message}`,
+                ),
+              );
+              // Fallback: keep raw file
+              const ext = path.extname(tmpFile).replace(".", "") || "jpeg";
+              const fallback = path.join(categoryDir, `${job.id}_${j}.${ext}`);
+              fs.renameSync(srcPath, fallback);
+              movedFiles.push(fallback);
+            }
+          }
         }
       } catch (error: unknown) {
         p.log.error(
@@ -244,18 +265,21 @@ export async function runBatch(
         );
       }
 
-      // Clean up tmp dir
       try {
         if (fs.existsSync(tmpDir)) {
           fs.rmSync(tmpDir, { recursive: true, force: true });
         }
-      } catch {}
+      } catch (cleanupError: unknown) {
+        p.log.warn(
+          color.yellow(
+            `Could not clean tmp for ${job.id}: ${(cleanupError as Error).message}`,
+          ),
+        );
+      }
 
-      // Update daily counter
       const currentCounter = getBatchCounter();
       updateBatchCounter(currentCounter.count + numImages);
 
-      // Append to manifest.json in outDir
       const manifestOutPath = path.join(fullOutDir, "manifest.json");
       let manifestEntries: BatchManifestEntry[] = [];
       try {
@@ -283,12 +307,34 @@ export async function runBatch(
         JSON.stringify(manifestEntries, null, 2),
       );
 
-      // Wait between jobs
       if (i < manifest.jobs.length - 1) {
         p.log.message(
           color.gray(`Waiting ${delaySeconds}s before next job...`),
         );
         await sleep(delaySeconds * 1000);
+      }
+    }
+
+    if (!dryRun && sheets) {
+      const s = p.spinner();
+      s.start("Building sprite sheets...");
+      try {
+        const built = await buildSheetsForOutDir(fullOutDir);
+        s.stop(
+          color.green(
+            `Built ${built.length} sheet${built.length === 1 ? "" : "s"}`,
+          ),
+        );
+        for (const sheet of built) {
+          p.log.info(
+            color.cyan(
+              `${sheet.atlas.meta.category}: ${sheet.sheetPath} (${sheet.atlas.meta.count} frames)`,
+            ),
+          );
+        }
+      } catch (sheetError: unknown) {
+        s.stop(color.red("Sprite sheet export failed"));
+        p.log.error(color.red((sheetError as Error).message));
       }
     }
 

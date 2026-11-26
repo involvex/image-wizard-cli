@@ -252,26 +252,28 @@ class ImageGenerator:
         if not os.path.exists(output_dir):
             os.makedirs(output_dir)
 
-        for images in images:
-            response = self.client.get(images)
+        for image_url in images:
+            response = self.client.get(image_url)
             if response.status_code != 200:
                 raise Exception(
                     "🛑 Exception happened while saving image! (Response was not ok)"
                 )
 
             # Sanitize filename: strip query string and invalid characters
-            raw_id = images.split("/id/")[1]
+            raw_id = image_url.split("/id/")[1]
             raw_id = raw_id.split("?")[0]
             filename = f"{raw_id}.jpeg"
             # Remove any characters invalid for Windows filenames
             import re as _re
 
             filename = _re.sub(r'[<>:"/\\|?*]', "_", filename)
-            with open(os.path.join(output_dir, filename), "wb") as f:
+            filepath = os.path.join(output_dir, filename)
+            with open(filepath, "wb") as f:
                 f.write(response.content)
-                f.close()
 
             self.__log(f"✅ Saved image {filename}!")
+            # Always print for Node bridge parsing (local path when saving)
+            print(f"🖼 {filepath}")
 
 
 class AsyncImageGenerator:
@@ -387,6 +389,7 @@ class AsyncImageGenerator:
                 raise Exception(
                     "🛑 No new images were generated for this cycle, please check your prompt"
                 )
+            images += new_images
             self.__log(
                 f"✅ Successfully finished cycle {cycle} in {round(time.time() - start_time, 2)} seconds"
             )
@@ -406,22 +409,23 @@ class AsyncImageGenerator:
         if not os.path.exists(output_dir):
             os.makedirs(output_dir)
 
-        for images in images:
-            response = await self.client.get(images)
+        for image_url in images:
+            response = await self.client.get(image_url)
             if response.status_code != 200:
                 raise Exception(
                     "🛑 Exception happened while saving image! (Response was not ok)"
                 )
 
-            raw_id = images.split("/id/")[1].split("?")[0]
+            raw_id = image_url.split("/id/")[1].split("?")[0]
             import re as _re
 
             filename = _re.sub(r'[<>:"/\\|?*]', "_", raw_id) + ".jpeg"
-            async with aiofiles.open(os.path.join(output_dir, filename), "wb") as f:
+            filepath = os.path.join(output_dir, filename)
+            async with aiofiles.open(filepath, "wb") as f:
                 await f.write(response.content)
-                await f.close()
 
             self.__log(f"✅ Saved image {filename}!")
+            print(f"🖼 {filepath}")
 
 
 def main():

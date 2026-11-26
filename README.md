@@ -9,17 +9,18 @@
 
 - Interactive setup wizard for authentication
 - Generate multiple images at once
+- Batch generation from JSON manifests
+- Sharp post-processing for pixel-art assets (magenta→alpha, trim, downscale, ≤32 palette)
 - Custom output directories
 - Beautiful CLI interface powered by [@clack/prompts](https://github.com/natemoo-re/clack)
 - Works on Windows, macOS, and Linux
-- **Bundled Python backend** - no manual Python setup required
 
 ## Prerequisites
 
 - **Node.js** 18+ or **Bun**
-- **Python** 3.7+ (for the image generation backend)
+- **Python** 3.7+ (for the Bing image generation backend)
 
-> Python dependencies are installed automatically when you install this package.
+> Python dependencies (`aiofiles`, `httpx`) are installed automatically via the package `postinstall` script.
 
 ## Installation
 
@@ -58,16 +59,17 @@ image-wizard "A photo of an astronaut riding a horse on Mars"
 # With options
 image-wizard "A futuristic city at sunset" -n 4 -o ./output
 
-# Short options
-image-wizard "A beautiful landscape" --number 6 --output my-images
+# Verbose Python/backend logs
+image-wizard "A beautiful landscape" --verbose
 ```
 
 ## Options
 
-| Option           | Short | Default    | Description                  |
-| ---------------- | ----- | ---------- | ---------------------------- |
-| `--number <num>` | `-n`  | `4`        | Number of images to generate |
-| `--output <dir>` | `-o`  | `./output` | Output directory for images  |
+| Option           | Short | Default (from config) | Description                  |
+| ---------------- | ----- | --------------------- | ---------------------------- |
+| `--number <num>` | `-n`  | `4`                   | Number of images to generate |
+| `--output <dir>` | `-o`  | `./output`            | Output directory for images  |
+| `--verbose`      | `-v`  | off                   | Show backend debug logs      |
 
 ## Commands
 
@@ -79,13 +81,80 @@ Configure authentication cookies for Bing Image Creator.
 
 Generate images from a text prompt.
 
+### `image-wizard batch <manifest.json>`
+
+Generate many assets from a JSON manifest (see `manifests/riftborn-pixel.json`).
+
+```bash
+image-wizard batch manifests/riftborn-pixel.json --dry-run
+image-wizard batch manifests/riftborn-pixel.json --delay 20 --max-per-day 200
+image-wizard batch manifests/riftborn-pixel.json --no-post
+```
+
+| Option          | Default | Description                                    |
+| --------------- | ------- | ---------------------------------------------- |
+| `--dry-run`     | —       | Print jobs without calling Bing                |
+| `--delay <sec>` | `20`    | Wait between jobs                              |
+| `--max-per-day` | `200`   | Soft daily prompt cap                          |
+| `--no-post`     | —       | Skip sharp post-processing (keep raw JPEG)     |
+| `--sheets`      | —       | Pack each category into a sprite sheet + atlas |
+
+**Manifest shape:**
+
+```json
+{
+  "style": "pixel art game asset, solid flat magenta background, ...",
+  "outDir": "out",
+  "jobs": [
+    {
+      "id": "tile_hub_0",
+      "category": "tiles",
+      "prompt": "seamless isometric ground tile",
+      "n": 1
+    }
+  ]
+}
+```
+
+Outputs land in `outDir/<category>/<id>_<n>.png` after post-processing. A second run skips jobs that already have files in the category folder.
+
+### `image-wizard post <file> --category <name>`
+
+Re-run sharp post-processing on an existing image.
+
+```bash
+image-wizard post raw.jpeg --category icons -o icons/icon_sword.png
+```
+
+Categories and target sizes: `tiles` 64×32, `props`/`enemies`/`characters` 64×64, `icons`/`ui` 32×32.
+
+### `image-wizard sheet <dir>`
+
+Pack frames into a grid sprite sheet + `.atlas.json`.
+
+```bash
+# One category
+image-wizard sheet out/icons -o out/sheet_icons.png
+
+# Every category under out/
+image-wizard sheet out --all
+```
+
+Validate with Pillow:
+
+```bash
+pip install Pillow
+python scripts/check-assets.py out/icons --expect 32x32
+python scripts/check-assets.py out/sheet_icons.png --sheet
+```
+
 ## Configuration
 
-Config file locations by platform:
+Config file locations by platform (`conf` project name `image-wizard-cli`):
 
-- **Windows**: `%APPDATA%\image-wizard-cli-nodejs\Config\config.json`
-- **macOS**: `~/Library/Application Support/image-wizard-cli-nodejs/config.json`
-- **Linux**: `~/.config/image-wizard-cli-nodejs/config.json`
+- **Windows**: `%APPDATA%\image-wizard-cli\Config\config.json`
+- **macOS**: `~/Library/Application Support/image-wizard-cli/config.json`
+- **Linux**: `~/.config/image-wizard-cli/config.json`
 
 Example config:
 
@@ -113,8 +182,8 @@ bun run dev "A test prompt"
 # Build for production
 bun run build
 
-# Run tests
-bun test
+# Tests (CI skips format/lint:fix hooks)
+bun run test:ci
 ```
 
 ## Tech Stack
@@ -123,8 +192,9 @@ bun test
 - **Language**: TypeScript
 - **CLI Framework**: Commander.js
 - **UI Library**: @clack/prompts
-- **Python Integration**: execa
-- **Backend**: bing-create (bundled)
+- **Post-processing**: sharp
+- **Python bridge**: `child_process.spawn`
+- **Backend**: vendored `bing_create/main.py`
 
 ## License
 

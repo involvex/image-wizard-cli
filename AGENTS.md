@@ -8,7 +8,8 @@ Image Wizard CLI is a command-line tool for generating AI images using Microsoft
 
 - **Frontend (TypeScript/Node.js)**: CLI interface built with Commander.js and @clack/prompts
 - **Backend (Python)**: Bing Image Creator integration in `bing_create/main.py`
-- **Bridge**: `src/python.ts` spawns Python subprocesses via execa
+- **Bridge**: `src/python.ts` spawns Python subprocesses via `child_process.spawn`
+- **Post-processing**: `src/post.ts` uses sharp (magenta→alpha, trim, nearest downscale, ≤32 palette)
 
 ## Useful Commands
 
@@ -43,11 +44,12 @@ bun run typecheck
 ### Testing
 
 ```bash
-# Run tests
+# Run tests (local pretest formats/lints)
 bun test
-```
 
-_Note: No test files exist currently in the repository._
+# CI-friendly tests (no mutating pretest)
+bun run test:ci
+```
 
 ### Running the Built CLI
 
@@ -85,14 +87,15 @@ bun run prepublishOnly
 
 ### Core Dependencies (Frontend)
 
-| Package          | Version | Purpose                                       |
-| ---------------- | ------- | --------------------------------------------- |
-| `@clack/prompts` | 1.0.0   | Beautiful interactive CLI prompts             |
-| `commander`      | 14.0.3  | CLI command parsing and help generation       |
-| `conf`           | 15.0.2  | Cross-platform configuration storage          |
-| `execa`          | 9.6.1   | Process execution for spawning Python backend |
-| `open`           | 11.0.0  | Opens browser for setup flow                  |
-| `picocolors`     | 1.1.1   | Terminal colors and styling                   |
+| Package          | Version | Purpose                                 |
+| ---------------- | ------- | --------------------------------------- |
+| `@clack/prompts` | 1.0.0   | Beautiful interactive CLI prompts       |
+| `commander`      | 14.0.3  | CLI command parsing and help generation |
+| `conf`           | 15.0.2  | Cross-platform configuration storage    |
+| `sharp`          | 0.34.x  | Pixel-art post-processing               |
+| `open`           | 11.0.0  | Opens browser for setup flow            |
+| `picocolors`     | 1.1.1   | Terminal colors and styling             |
+| `execa`          | 9.6.1   | Declared; bridge currently uses `spawn` |
 
 ### Core Dependencies (Backend)
 
@@ -112,30 +115,35 @@ bun run prepublishOnly
 
 ### Key Files
 
-| File                  | Purpose                                                                             |
-| --------------------- | ----------------------------------------------------------------------------------- |
-| `src/index.ts`        | Main CLI entry point with Commander.js commands (`generate` and `setup`)            |
-| `src/config.ts`       | Configuration management using `conf` package with validation                       |
-| `src/python.ts`       | Python integration layer - spawns Python subprocess and parses stdout               |
-| `bing_create/main.py` | Core Bing integration logic with `ImageGenerator` and `AsyncImageGenerator` classes |
-| `package.json`        | Project metadata, scripts, and dependencies                                         |
+| File                      | Purpose                                                                             |
+| ------------------------- | ----------------------------------------------------------------------------------- |
+| `src/index.ts`            | CLI entry: default generate, `setup`, `batch`, `post`, `sheet`                      |
+| `src/config.ts`           | Configuration management using `conf` package with validation                       |
+| `src/python.ts`           | Python integration layer - spawns Python subprocess and parses stdout               |
+| `src/batch.ts`            | Manifest-driven batch runner with skip-existing and daily cap                       |
+| `src/post.ts`             | Sharp post-processing pipeline                                                      |
+| `src/sheet.ts`            | Sprite-sheet + atlas export                                                         |
+| `scripts/check-assets.py` | Pillow validator for alpha, size, palette                                           |
+| `bing_create/main.py`     | Core Bing integration logic with `ImageGenerator` and `AsyncImageGenerator` classes |
+| `package.json`            | Project metadata, scripts, and dependencies                                         |
 
 ### Data Flow
 
 1. User runs `image-wizard "prompt"` → `src/index.ts` parses command
 2. Config validated from `conf` store (`src/config.ts`)
-3. Python script spawned via execa (`src/python.ts`) with cookies and parameters
+3. Python script spawned via `child_process.spawn` (`src/python.ts`) with cookies and parameters
 4. Python makes HTTP requests to bing.com/images/create, polls for results
-5. Python prints image URLs to stdout (each prefixed with "🖼")
-6. Node.js parses stdout for lines containing "🖼" and extracts URLs
+5. Python prints local paths or URLs to stdout (each prefixed with "🖼")
+6. Node.js parses stdout for lines containing "🖼" (and falls back to scanning the output dir)
+7. Batch mode optionally runs `src/post.ts` (sharp) before writing final PNGs
 
 ### Configuration
 
-Configuration is stored system-wide via the `conf` package:
+Configuration is stored system-wide via the `conf` package (`projectName: image-wizard-cli`):
 
-- **Windows**: `%APPDATA%\image-wizard-cli-nodejs\Config\config.json`
-- **macOS**: `~/Library/Application Support/image-wizard-cli-nodejs/config.json`
-- **Linux**: `~/.config/image-wizard-cli-nodejs/config.json`
+- **Windows**: `%APPDATA%\image-wizard-cli\Config\config.json`
+- **macOS**: `~/Library/Application Support/image-wizard-cli/config.json`
+- **Linux**: `~/.config/image-wizard-cli/config.json`
 
 Required config keys: `auth_cookie_u`, `auth_cookie_srchhpgusr`. Optional: `output_dir`, `num_images`.
 
@@ -163,14 +171,15 @@ Required config keys: `auth_cookie_u`, `auth_cookie_srchhpgusr`. Optional: `outp
 - **Browser simulation**: Use realistic headers and session establishment (GET to `/images/create` first) to mimic real browser behavior
 - **Polling**: Bing returns results asynchronously; poll `/images/create/async/results/{id}` until ready
 - **Error handling**: Check for blocked prompts, language restrictions, and timeouts
-- **Output format**: When not saving to disk, print URLs as `🖼 <url>` for Node.js parsing
-- **Timeout**: 5-minute timeout (300000ms) on the Node.js side; Python has internal timeouts
+- **Output format**: Print `🖼 <path-or-url>` for Node.js parsing (including when saving to disk)
+- **Timeout**: 6-minute timeout on the Node.js side; Python has internal timeouts
 
 ### Build & Bundling
 
 - **Target**: Build for Node.js with Bun bundler
 - **Entry point**: `src/index.ts` → `dist/index.js`
-- **Shebang**: `#!/usr/bin/env bun` added via banner
+- **Shebang**: `#!/usr/bin/env node` added via banner
+- **External**: `sharp` is marked `--external` (native bindings)
 - **Bundled files**: Ensure `bing_create/` directory and `requirements.txt` are included in npm package (configured in `package.json` files array)
 - **Python path resolution**: After bundling to `dist/`, the Python script path resolves via `path.join(path.dirname(__dirname), "bing_create", "main.py")` to reach the package root
 
@@ -203,3 +212,14 @@ Required config keys: `auth_cookie_u`, `auth_cookie_srchhpgusr`. Optional: `outp
 - **License**: MIT
 - **Package name**: `@involvex/image-wizard-cli`
 - **Bin command**: `image-wizard`
+
+## Current work
+
+- See [PHASES.md](PHASES.md). Phases 1, 3, 5, 5b/C2 done; C1 native TS Bing provider is the next large CLI item.
+
+## Learned workspace facts
+
+- `setuptools` must not be a runtime dep (Dependabot); only `aiofiles` + `httpx` in `requirements.txt`
+- Batch skip-existing checks `outDir/<category>/`, not the outDir root
+- sharp is `--external` in the Bun build (native bindings)
+- Python bridge uses `spawn`, not `execa` (dep still listed)

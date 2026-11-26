@@ -1,6 +1,6 @@
 {
   "name": "@involvex/image-wizard-cli",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "CLI to generate AI images with Bing DALL-E 3",
   "keywords": [
     "ai",
@@ -54,7 +54,7 @@
   ],
   "scripts": {
     "prebuild": "bun run format && bun run lint:fix && bun run typecheck",
-    "build": "bun build --target node --outfile dist/index.js --entry src/index.ts --banner '#!/usr/bin/env bun'",
+    "build": "bun build --target node --outfile dist/index.js --entry src/index.ts --banner '#!/usr/bin/env node' --external sharp",
     "dev": "bun run ./src/index.ts",
     "format": "prettier --write .",
     "postinstall": "python -c \"import sys; sys.exit(0 if sys.version_info >= (3, 7) else 1)\" 2>nul || py -c \"import sys; sys.exit(0 if sys.version_info >= (3, 7) else 1)\" 2>nul || echo Python 3.7+ required && (pip install -q aiofiles httpx 2>nul || py -m pip install -q aiofiles httpx 2>nul) || exit 0",
@@ -64,6 +64,7 @@
     "start": "bun run ./dist/index.js",
     "pretest": "bun run format && bun run lint:fix && bun run typecheck",
     "test": "bun test",
+    "test:ci": "bun test",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -72,7 +73,8 @@
     "conf": "15.0.2",
     "execa": "9.6.1",
     "open": "11.0.0",
-    "picocolors": "1.1.1"
+    "picocolors": "1.1.1",
+    "sharp": "0.34.5"
   },
   "devDependencies": {
     "@types/node": "25.1.0",

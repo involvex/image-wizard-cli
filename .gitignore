@@ -6,7 +6,7 @@
 [Ll]ib
 [Ll]ib64
 [Ll]ocal
-[Ss]cripts
+# Windows venv Scripts/ lives under .venv (already ignored)
 pyvenv.cfg
 .venv
 pip-selfcheck.json

@@ -10,11 +10,10 @@ setup(
     long_description_content_type="text/markdown",
     url="https://github.com/involvex/bing-create",
     packages=find_packages(),
-    install_requires=["setuptools~=68.2.0", "aiofiles~=23.2.1", "httpx~=0.27.0"],
+    install_requires=["aiofiles~=23.2.1", "httpx~=0.27.0"],
     classifiers=[
         "Intended Audience :: Developers",
         "Topic :: Software Development :: Libraries :: Python Modules",
-        "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
@@ -26,7 +25,7 @@ setup(
     ],
     keywords="ai dall-e image bing api generator bing_create image-generator ig ic",
     project_urls={"Support": "https://github.com/Waenara/bing-create/issues"},
-    python_requires=">=3.6",
+    python_requires=">=3.7",
     entry_points={
         "console_scripts": [
             "bing-create = bing_create.main:main",
