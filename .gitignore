@@ -21,3 +21,5 @@ dist
 .mira/mira.log
 .phases/
 bing_create/create.py
+out/
+out-processed/
